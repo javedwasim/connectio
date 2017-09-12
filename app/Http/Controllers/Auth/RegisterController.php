@@ -3,314 +3,110 @@
 namespace App\Http\Controllers\Auth;
 
 use App\User;
-use App\RegistrationToken;
-use Illuminate\Http\Request;
-use Kitano\Aktiv8me\ActivatesUsers;
+use Validator;
 use App\Http\Controllers\Controller;
-use App\Notifications\Aktiv8me\TokenRenewed;
 use Illuminate\Foundation\Auth\RegistersUsers;
-use Illuminate\Foundation\Auth\ThrottlesLogins;
+use Mail;
+use Hash;
+use Flash;
+use Illuminate\Support\Facades\Input;
 
+/**
+ * Class RegisterController
+ * @package %%NAMESPACE%%\Http\Controllers\Auth
+ */
 class RegisterController extends Controller
 {
-    use ActivatesUsers, RegistersUsers, ThrottlesLogins;
+    /*
+    |--------------------------------------------------------------------------
+    | Register Controller
+    |--------------------------------------------------------------------------
+    |
+    | This controller handles the registration of new users as well as their
+    | validation and creation. By default this controller uses a trait to
+    | provide this functionality without requiring any additional code.
+    |
+    */
 
-    /** @var \Illuminate\Http\Request */
-    protected $request;
-
-    /** @var \App\User */
-    protected $user;
-
-    /** @var string */
-    protected $redirectTo = '/';
+    use RegistersUsers;
 
     /**
-     * Will carry flashed messages/json responses
+     * Show the application registration form.
      *
-     * @var array
+     * @return \Illuminate\Http\Response
      */
-    protected $status = [];
+    public function showRegistrationForm()
+    {
+        return view('adminlte::auth.register');
+    }
+
+    /**
+     * Where to redirect users after login / registration.
+     *
+     * @var string
+     */
+    protected $redirectTo = '/home';
 
     /**
      * Create a new controller instance.
      *
-     * @param \Illuminate\Http\Request $request
-     */
-    public function __construct(Request $request)
-    {
-        $this->request = $request;
-
-        $this->middleware(['guest']);
-    }
-
-    /**
-     * Show resend token form
-     *
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
-     */
-    public function getResend()
-    {
-        return view('auth.resend');
-    }
-
-    /**
-     * Resend token by user request
-     *
-     * We'll try our best to avoid disclosing any information
-     * about users. This feature could be used to check if
-     * a given email address is registered or not.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function postResend()
-    {
-        $this->emailValidator($this->request->input())->validate();
-
-        // We take advantage of Laravel's ThrottlesLogins trait,
-        // but a recaptcha on the Form should be implemented.
-        if ($this->hasTooManyLoginAttempts($this->request)) {
-            $this->fireLockoutEvent($this->request);
-
-            return $this->sendLockoutResponse($this->request);
-        }
-
-        $this->incrementLoginAttempts($this->request);
-
-        $this->user = User::findByEmail($this->request->input('email'));
-
-        // No user, no go!
-        if (is_null($this->user) || ! $this->user->count()) {
-            // just apologise and throw some generic message
-            $this->status = $this->setStatus(
-                trans('aktiv8me.status.account_confirmation'),
-                trans('aktiv8me.status.no_can_do'),
-                422
-            );
-
-            return $this->sendResendResponse();
-        }
-
-        if ($this->user->verified) {
-            // If a user is already active, we will send him
-            // an email with that information, rather than
-            // popping up any info alert on the screen.
-            $this->setStatus($this->sendUserIsActiveEmail($this->user));
-
-            return $this->sendResendResponse();
-        }
-
-        if (! $this->canSendToken($this->user->codes->count())) {
-            $this->status = $this->setStatus(
-                trans('aktiv8me.status.account_confirmation'),
-                trans('aktiv8me.status.max_tokens'),
-                403
-            );
-
-            return $this->sendResendResponse();
-        }
-
-        // good to go! generate new token and mail it
-        $this->status = $this->setStatus(
-            $this->sendActivationEmail(
-                $this->user,
-                RegistrationToken::makeToken($this->user->email),
-                $this->user->codes->count() + 1
-            )
-        );
-
-        $this->clearLoginAttempts($this->request);
-
-        return $this->sendResendResponse();
-    }
-
-    /**
-     * Register a user
-     *
-     * Overrides method in \Illuminate\Foundation\Auth\RegistersUsers
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function register()
-    {
-        $this->registerValidator($this->request->input())->validate();
-
-        $this->storeUser();
-
-        return $this->sendRegisterResponse();
-    }
-
-    /**
-     * Get the login username to be used by the controller.
-     *
-     * @return string
-     */
-    public function username()
-    {
-        return 'email';
-    }
-
-    /**
-     * Confirm/Activate a user
-     *
-     * This method only supports HTTP requests.
-     * Tweaks are necessary, if front-end is
-     * a JavaScript App.
-     *
-     * @param  string $token
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function verify($token)
-    {
-        /** @var \App\RegistrationToken $valid_token */
-        $valid_token = RegistrationToken::findToken($token);
-
-        if (! $valid_token) {
-            $this->status = $this->setStatus(
-                trans('aktiv8me.status.account_confirmation'),
-                trans('aktiv8me.status.invalid_token'),
-                403
-            );
-
-            return redirect('/')->with('status', $this->status);
-        }
-
-        $this->user = $valid_token->user;
-
-        if ($this->tokenIsExpired($valid_token)) {
-            $this->renewToken();
-
-            return redirect('/')->with('status', $this->status);
-        }
-
-        $this->sendWelcomeEmail($this->user)
-             ->destroyToken($valid_token->user_id);
-
-        if ($this->autoLoginEnabled()) {
-            $this->guard()->login($this->user);
-
-            $this->status = $this->setStatus(
-                trans('aktiv8me.status.account_confirmation'),
-                trans('aktiv8me.status.account_confirmed_and_in', ['username' => $this->user->name]),
-                false
-            );
-
-            return redirect('/')->with('status', $this->status);
-        }
-
-        $this->status = $this->setStatus(
-            trans('aktiv8me.status.account_confirmation'),
-            trans('aktiv8me.status.account_confirmed'),
-            false
-        );
-
-        return redirect('/login')->with('status', $this->status);
-    }
-
-    /**
-     * Destroy used tokens
-     *
-     * @param $user
-     *
-     * @return $this
-     */
-    protected function destroyToken($user)
-    {
-        RegistrationToken::deleteCode($user);
-
-        return $this;
-    }
-
-    /**
-     * The user has been registered.
-     *
      * @return void
      */
-    protected function registered()
+    public function __construct()
     {
-        if ($this->aktiv8enabled()) {
-            $this->status = $this->setStatus(
-                $this->sendActivationEmail($this->user, RegistrationToken::makeToken($this->user->email))
-            );
-        }
-
-        if ($this->canAutoLogin()) {
-            $this->guard()->login($this->user);
-
-            $this->status = $this->setStatus(
-                trans('aktiv8me.status.login'),
-                trans('aktiv8me.status.first_login', ['username' => $this->user->name]),
-                false
-            );
-        }
+        $this->middleware('guest');
     }
 
     /**
-     * Update an expired token
+     * Get a validator for an incoming registration request.
      *
-     * @return $this
+     * @param  array  $data
+     * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function renewToken()
+    protected function validator(array $data)
     {
-        if (! $this->canAutoResendToken()) {
-            $this->status = $this->setStatus(
-                trans('aktiv8me.status.account_confirmation'),
-                trans('aktiv8me.status.token_expired').
-                $this->canSendToken($this->user->codes->count()) ? trans('aktiv8me.status.can_resend') : '',
-                422
-            );
-
-            return $this;
-        }
-
-        $this->status = $this->setStatus(
-            $this->sendTokenUpdatedEmail($this->user, RegistrationToken::updateFor($this->user))
-        );
-
-        return $this;
-    }
-
-    /**
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    protected function sendResendResponse()
-    {
-        if ($this->request->expectsJson()) {
-            return response()->json($this->status, $this->status['http_code']);
-        }
-
-        return redirect($this->redirectPath())
-            ->with('status', $this->status);
-    }
-
-    /**
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
-     */
-    protected function sendRegisterResponse()
-    {
-        if ($this->request->expectsJson()) {
-            return response()->json($this->status, $this->status['http_code']);
-        }
-
-        return redirect($this->redirectPath())
-            ->with('status', $this->status);
+        return Validator::make($data, [
+            'name'     => 'required|max:255',
+            'username' => 'sometimes|required|max:255|unique:users',
+            'email'    => 'required|email|max:255|unique:users',
+            'password' => 'required|min:6|confirmed',
+            'terms'    => 'required',
+        ]);
     }
 
     /**
      * Create a new user instance after a valid registration.
      *
-     * @return static|\App\User
+     * @param  array  $data
+     * @return User
      */
-    protected function storeUser()
+    protected function create(array $data)
     {
-        $data = $this->request->input();
+        $confirmation_code = str_random(30);
 
-        $this->user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
+        $fields = [
+            'name'     => $data['name'],
+            'email'    => $data['email'],
             'password' => bcrypt($data['password']),
-        ]);
+        ];
+        if (config('auth.providers.users.field','email') === 'username' && isset($data['username'])) {
+            $fields['username'] = $data['username'];
+        }
 
-        $this->registered();
+        //send verification email.
+        $data = [
+
+            'confirmation_code' => $confirmation_code
+        ];
+
+        Mail::send('auth.emails.verify', $data, function ($message) {
+
+            $message->from('info@connectio.com', 'Connect IO');
+
+            $message->to(Input::get('email'))->subject('Account Activation');
+
+        });
+
+        return User::create($fields);
     }
 }

@@ -23,11 +23,3 @@ Route::group(['middleware' => 'auth'], function () {
     //Please do not remove this if you want adminlte:route and adminlte:link commands to works correctly.
     #adminlte_routes
 });
-
-Auth::routes();
-
-Route::get('/home', 'HomeController@index')->name('home');
-
-Route::get('/aktiv8me/verify/{token}', '\App\Http\Controllers\Auth\RegisterController@verify')->name('register.verify');
-Route::get('/aktiv8me/resend', '\App\Http\Controllers\Auth\RegisterController@resend');
-Route::post('/aktiv8me/resend', '\App\Http\Controllers\Auth\RegisterController@resend')->name('register.resend');

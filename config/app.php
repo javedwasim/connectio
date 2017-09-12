@@ -178,6 +178,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         Acacha\AdminLTETemplateLaravel\Providers\AdminLTETemplateServiceProvider::class,
         Kitano\Aktiv8me\Aktiv8meServiceProvider::class,
+        Spatie\Permission\PermissionServiceProvider::class,
 
     ],
 

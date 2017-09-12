@@ -2,81 +2,91 @@
 
 namespace App\Http\Controllers\Auth;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
-use App\Http\Controllers\Auth\Auth;
-
+use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
-    use AuthenticatesUsers;
+    /*
+    |--------------------------------------------------------------------------
+    | Login Controller
+    |--------------------------------------------------------------------------
+    |
+    | This controller handles authenticating users for the application and
+    | redirecting them to your home screen. The controller uses a trait
+    | to conveniently provide its functionality to your applications.
+    |
+    */
 
-    /** @var string */
-    protected $redirectTo = '/';
+    use AuthenticatesUsers {
+        attemptLogin as attemptLoginAtAuthenticatesUsers;
+    }
+
+    /**
+     * Show the application's login form.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function showLoginForm()
+    {
+        return view('adminlte::auth.login');
+    }
+
+    /**
+     * Where to redirect users after login.
+     *
+     * @var string
+     */
+    protected $redirectTo = '/home';
 
     /**
      * Create a new controller instance.
+     *
+     * @return void
      */
     public function __construct()
     {
-        $this->middleware('guest')
-             ->except('logout');
+        $this->middleware('guest', ['except' => 'logout']);
     }
 
     /**
-     * @param \Illuminate\Http\Request $request
+     * Returns field name to use at login.
      *
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     * @return string
      */
-    public function login(Request $request)
+    public function username()
     {
-        $this->validateLogin($request);
-
-        if ($this->hasTooManyLoginAttempts($request)) {
-            $this->fireLockoutEvent($request);
-
-            return $this->sendLockoutResponse($request);
-        }
-
-        if ($this->attemptLogin($request)) {
-            $user =  \Illuminate\Support\Facades\Auth::user();
-            //$user = Auth::user();dd();
-
-            if ($user->activated) {
-                return response()->json(['user' => $user]);
-            }
-
-            $this->guard()->logout();
-            $request->session()->invalidate();
-        }
-
-        $this->incrementLoginAttempts($request);
-
-        return $this->sendFailedLoginResponse($request);
+        return config('auth.providers.users.field','email');
     }
 
     /**
-     * The user has been authenticated.
+     * Attempt to log the user into the application.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  mixed  $user
-     * @return mixed
+     * @return bool
      */
-    protected function authenticated(Request $request, $user)
+    protected function attemptLogin(Request $request)
     {
-        if ($request->expectsJson()) {
-            return response()->json([
-                'user' => $user,
-                'intended' => $this->redirectPath(),
-            ]);
+        if ($this->username() === 'email') return $this->attemptLoginAtAuthenticatesUsers($request);
+        if ( ! $this->attemptLoginAtAuthenticatesUsers($request)) {
+            return $this->attempLoginUsingUsernameAsAnEmail($request);
         }
-
-        Session::flash('status', [
-            'title' => trans('aktiv8me.status.login'),
-            'message' => trans('aktiv8me.status.logged_in', ['username' => $user->name]),
-            'type' => 'success',
-        ]);
+        return false;
     }
+
+    /**
+     * Attempt to log the user into application using username as an email.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return bool
+     */
+    protected function attempLoginUsingUsernameAsAnEmail(Request $request)
+    {
+        return $this->guard()->attempt(
+            ['email' => $request->input('username'), 'password' => $request->input('password')],
+            $request->has('remember'));
+    }
+
+
 }
