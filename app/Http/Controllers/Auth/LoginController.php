@@ -2,91 +2,78 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
-    */
+    use AuthenticatesUsers;
 
-    use AuthenticatesUsers {
-        attemptLogin as attemptLoginAtAuthenticatesUsers;
-    }
-
-    /**
-     * Show the application's login form.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function showLoginForm()
-    {
-        return view('adminlte::auth.login');
-    }
-
-    /**
-     * Where to redirect users after login.
-     *
-     * @var string
-     */
-    protected $redirectTo = '/home';
+    /** @var string */
+    protected $redirectTo = '/';
 
     /**
      * Create a new controller instance.
-     *
-     * @return void
      */
     public function __construct()
     {
-        $this->middleware('guest', ['except' => 'logout']);
+        $this->middleware('guest')
+             ->except('logout');
     }
 
     /**
-     * Returns field name to use at login.
+     * @param \Illuminate\Http\Request $request
      *
-     * @return string
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
      */
-    public function username()
+    public function login(Request $request)
     {
-        return config('auth.providers.users.field','email');
+        $this->validateLogin($request);
+
+        if ($this->hasTooManyLoginAttempts($request)) {
+            $this->fireLockoutEvent($request);
+
+            return $this->sendLockoutResponse($request);
+        }
+
+        if ($this->attemptLogin($request)) {
+            $user = Auth::user();
+
+            if ($user->active) {
+                return response()->json(['user' => $user]);
+            }
+
+            $this->guard()->logout();
+            $request->session()->invalidate();
+        }
+
+        $this->incrementLoginAttempts($request);
+
+        return $this->sendFailedLoginResponse($request);
     }
 
     /**
-     * Attempt to log the user into the application.
+     * The user has been authenticated.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return bool
+     * @param  mixed  $user
+     * @return mixed
      */
-    protected function attemptLogin(Request $request)
+    protected function authenticated(Request $request, $user)
     {
-        if ($this->username() === 'email') return $this->attemptLoginAtAuthenticatesUsers($request);
-        if ( ! $this->attemptLoginAtAuthenticatesUsers($request)) {
-            return $this->attempLoginUsingUsernameAsAnEmail($request);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'user' => $user,
+                'intended' => $this->redirectPath(),
+            ]);
         }
-        return false;
+
+        Session::flash('status', [
+            'title' => trans('aktiv8me.status.login'),
+            'message' => trans('aktiv8me.status.logged_in', ['username' => $user->name]),
+            'type' => 'success',
+        ]);
     }
-
-    /**
-     * Attempt to log the user into application using username as an email.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return bool
-     */
-    protected function attempLoginUsingUsernameAsAnEmail(Request $request)
-    {
-        return $this->guard()->attempt(
-            ['email' => $request->input('username'), 'password' => $request->input('password')],
-            $request->has('remember'));
-    }
-
-
 }

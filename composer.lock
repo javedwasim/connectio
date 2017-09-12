@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "ac5ba73bf7bae581d4f60595f080d5a7",
+    "content-hash": "dc2b9b5479ad7306d03ae5bf9fdafe11",
     "packages": [
         {
             "name": "acacha/admin-lte-template-laravel",
@@ -1412,6 +1412,52 @@
                 "uuid"
             ],
             "time": "2017-08-04T13:39:04+00:00"
+        },
+        {
+            "name": "samkitano/aktiv8me",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/samkitano/aktiv8me.git",
+                "reference": "7d3138505f6d4359746c78ae19a652a824de6ed7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/samkitano/aktiv8me/zipball/7d3138505f6d4359746c78ae19a652a824de6ed7",
+                "reference": "7d3138505f6d4359746c78ae19a652a824de6ed7",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.6.4"
+            },
+            "require-dev": {
+                "fzaninotto/faker": "~1.4",
+                "laravel/framework": "5.4.*",
+                "mockery/mockery": "0.9.*",
+                "phpunit/phpunit": "^5.7",
+                "tightenco/mailthief": "^0.3.6"
+            },
+            "type": "project",
+            "autoload": {
+                "psr-4": {
+                    "Kitano\\Aktiv8me\\": "src"
+                },
+                "classmap": [
+                    "tests"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "samkitano",
+                    "email": "sam.kitano@gmail.com"
+                }
+            ],
+            "description": "User Activation by email for Laravel 5.4",
+            "time": "2017-07-30T19:08:23+00:00"
         },
         {
             "name": "swiftmailer/swiftmailer",
