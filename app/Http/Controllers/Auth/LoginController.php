@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use App\Http\Controllers\Auth\Auth;
+
 
 class LoginController extends Controller
 {
@@ -39,9 +41,10 @@ class LoginController extends Controller
         }
 
         if ($this->attemptLogin($request)) {
-            $user = Auth::user();
+            $user =  \Illuminate\Support\Facades\Auth::user();
+            //$user = Auth::user();dd();
 
-            if ($user->active) {
+            if ($user->activated) {
                 return response()->json(['user' => $user]);
             }
 
