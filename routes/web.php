@@ -11,9 +11,31 @@
 |
 */
 
+
+
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::group(['middleware' => ['role:admin,edit restricted']], function () {
+
+    Route::get('admin', [
+        'as' => 'home',
+        'uses' => 'HomeController@AdminView'
+    ]);
+
+
+
+});
+
+Route::group(['middleware' => ['role:superadmin,edit website']], function () {
+
+    Route::get('superadmin', [
+        'as' => 'home',
+        'uses' => 'HomeController@AdminView'
+    ]);
+});
+
 
 Route::group(['middleware' => 'auth'], function () {
     //    Route::get('/link1', function ()    {
@@ -23,3 +45,10 @@ Route::group(['middleware' => 'auth'], function () {
     //Please do not remove this if you want adminlte:route and adminlte:link commands to works correctly.
     #adminlte_routes
 });
+
+Route::get('register/verify/{confirmationCode}', [
+    'as' => 'confirmation_path',
+    'uses' => 'LoginController@confirm'
+]);
+
+

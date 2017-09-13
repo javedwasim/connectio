@@ -9,6 +9,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Class HomeController
@@ -24,6 +25,7 @@ class HomeController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('UserActivation');
     }
 
     /**
@@ -33,6 +35,25 @@ class HomeController extends Controller
      */
     public function index()
     {
-        return view('adminlte::home');
+        //return view('adminlte::home');
+        $user = Auth::user();
+        $role = $user->getRoleNames();
+
+        if(isset($role[0]) && ($role[0]=='admin') ){
+           return redirect('admin');
+        }
+        elseif(isset($role[0]) && ($role[0]=='superadmin')){
+            return redirect('superadmin');
+        }
+
+    }
+
+    public function AdminView(){
+
+        $user = Auth::user();
+        $role = $user->getRoleNames();
+
+        return view('adminlte::adminview',compact('role'));
+
     }
 }

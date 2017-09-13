@@ -10,6 +10,9 @@ use Mail;
 use Hash;
 use Flash;
 use Illuminate\Support\Facades\Input;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Request;
 
 /**
  * Class RegisterController
@@ -45,7 +48,7 @@ class RegisterController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/login';
 
     /**
      * Create a new controller instance.
@@ -82,7 +85,8 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        $confirmation_code = str_random(30);
+        $userData = Request::all();
+        $confirmationCode = str_random(30);
 
         $fields = [
             'name'     => $data['name'],
@@ -93,10 +97,24 @@ class RegisterController extends Controller
             $fields['username'] = $data['username'];
         }
 
+       //return User::create($fields);
+        //create user with role and permisssion
+        $user = new User;
+        $user->name = $userData['name'];
+        $user->email = $userData['email'];
+        $user->password = Hash::make($userData['password']);
+        $user->confirmation_code = $confirmationCode;
+        $user->save();
+
+        //adding roles to a user
+        $user->assignRole('admin');
+        //adding permissions to a user
+        $user->givePermissionTo('edit restricted');
+        //user id
         //send verification email.
         $data = [
 
-            'confirmation_code' => $confirmation_code
+            'confirmation_code' => $confirmationCode
         ];
 
         Mail::send('auth.emails.verify', $data, function ($message) {
@@ -107,6 +125,30 @@ class RegisterController extends Controller
 
         });
 
-        return User::create($fields);
+        return $user;
+
+    }
+
+    public function confirm($confirmation_code)
+    {
+        if( ! $confirmation_code)
+        {
+            Flash::message('You have successfully verified your account.');
+
+        }
+
+        $user = User::whereConfirmationCode($confirmation_code)->first();
+
+        if ( ! $user)
+        {
+            return redirect('registers')->with('status', 'Invalid email address! Please signup.');
+
+        }
+
+        $user->confirmed = 1;
+        $user->confirmation_code = null;
+        $user->save();
+
+        return redirect('login')->with('status', 'Account activated successfully! Please Login.');
     }
 }
