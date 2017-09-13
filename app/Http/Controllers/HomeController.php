@@ -43,7 +43,12 @@ class HomeController extends Controller
            return redirect('admin');
         }
         elseif(isset($role[0]) && ($role[0]=='superadmin')){
+
             return redirect('superadmin');
+
+        }elseif(isset($role[0]) && ($role[0]=='user')){
+
+            return redirect('user');
         }
 
     }
@@ -56,4 +61,24 @@ class HomeController extends Controller
         return view('adminlte::adminview',compact('role'));
 
     }
+
+    public function SuperAdminView(){
+
+        $user = Auth::user();
+        $role = $user->getRoleNames();
+
+        return view('adminlte::superadminview',compact('role'));
+
+    }
+
+
+    public function UserView(){
+
+        $user = Auth::user();
+        $role = $user->getRoleNames();
+
+        return view('adminlte::home',compact('role'));
+
+    }
+
 }

@@ -24,15 +24,20 @@ Route::group(['middleware' => ['role:admin,edit restricted']], function () {
         'uses' => 'HomeController@AdminView'
     ]);
 
-
-
 });
 
 Route::group(['middleware' => ['role:superadmin,edit website']], function () {
 
     Route::get('superadmin', [
         'as' => 'home',
-        'uses' => 'HomeController@AdminView'
+        'uses' => 'HomeController@SuperAdminView'
+    ]);
+});
+
+Route::group(['middleware' => ['role:user,edit not allowed']], function () {
+    Route::get('user', [
+        'as' => 'home',
+        'uses' => 'HomeController@UserView'
     ]);
 });
 

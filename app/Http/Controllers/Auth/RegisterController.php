@@ -107,9 +107,9 @@ class RegisterController extends Controller
         $user->save();
 
         //adding roles to a user
-        $user->assignRole('admin');
+        $user->assignRole('user');
         //adding permissions to a user
-        $user->givePermissionTo('edit restricted');
+        $user->givePermissionTo('edit not allowed');
         //user id
         //send verification email.
         $data = [
