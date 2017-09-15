@@ -7,10 +7,12 @@
     "require": {
         "php": ">=5.6.4",
         "acacha/admin-lte-template-laravel": "4.*",
+        "jenssegers/agent": "^2.5",
         "laravel/framework": "5.4.*",
         "laravel/tinker": "~1.0",
         "samkitano/aktiv8me": "1.*",
-        "spatie/laravel-permission": "^2.6"
+        "spatie/laravel-permission": "^2.6",
+        "torann/geoip": "^1.0"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",

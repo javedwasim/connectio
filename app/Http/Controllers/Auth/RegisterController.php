@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Input;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Request;
+use App\usermeta;
+use Jenssegers\Agent\Agent;
 
 /**
  * Class RegisterController
@@ -85,6 +87,24 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        $agent = new Agent();
+        $deviceType  = '';
+
+       echo $browser = $agent->browser();
+       echo  $version = $agent->version($browser);
+
+       if($agent->isDesktop()){
+
+           $deviceType = 'Desktop';
+
+           echo $deviceType;
+       }
+
+        dd();
+
+        //save userlocation info
+        $this->SaveUserMeta(1,"182.185.148.11");
+        dd();
         $userData = Request::all();
         $confirmationCode = str_random(30);
 
@@ -110,8 +130,40 @@ class RegisterController extends Controller
         $user->assignRole('user');
         //adding permissions to a user
         $user->givePermissionTo('edit not allowed');
-        //user id
+        //user id $user->id
+
+        //save userlocation info
+        $this->SaveUserMeta($user->id,"182.185.148.11");
         //send verification email.
+        $this->SendActivationEmail($confirmationCode);
+
+        return $user;
+
+    }
+
+    public function SaveUserMeta($userId,$ipAddres){
+
+        $userLoacationInfo = geoip()->getLocation($ipAddres);
+        $browserInfo = new Agent();
+
+        $userInfo = json_encode(array('ip' => $userLoacationInfo->ip,'iso_code'=>$userLoacationInfo->iso_code,
+                'country'=>$userLoacationInfo->country,'city'=>$userLoacationInfo->city,'state'=>$userLoacationInfo->state,
+                'state_name'=>$userLoacationInfo->state_name,'postal_code'=>$userLoacationInfo->postal_code,
+                'lat'=>$userLoacationInfo->lat,'lon'=>$userLoacationInfo->lon,'timezone'=>$userLoacationInfo->timezone,
+                'currency'=>$userLoacationInfo->currency));
+
+        $userMeta = new usermeta();
+        $userMeta->user_id = $userId;
+        $userMeta->locations = $userInfo;
+        $userMeta->browserinfo = '';
+        $userMeta->save();
+        return $userMeta;
+
+
+    }
+
+    public function SendActivationEmail($confirmationCode){
+
         $data = [
 
             'confirmation_code' => $confirmationCode
@@ -125,7 +177,6 @@ class RegisterController extends Controller
 
         });
 
-        return $user;
 
     }
 
