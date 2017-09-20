@@ -81,7 +81,7 @@ Landing page based on Pratt: http://blacktie.co/demo/pratt/
                     <div class="col-lg-2">
                         <h5>{{ trans('adminlte_lang::message.amazing') }}</h5>
                         <p>{{ trans('adminlte_lang::message.basedadminlte') }}</p>
-                        <img class="hidden-xs hidden-sm hidden-md" src="{{ asset('/img/arrow1.png') }}">
+                        <img class="hidden-xs hidden-sm hidden-md" src="{{ asset('public/img/arrow1.png') }}">
                     </div>
                     <div class="col-lg-8">
                         <img class="img-responsive" src="{{ asset('/img/app-bg.png') }}" alt="">

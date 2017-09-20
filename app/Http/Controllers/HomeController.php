@@ -10,6 +10,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\User;
 
 /**
  * Class HomeController
@@ -48,7 +49,7 @@ class HomeController extends Controller
 
         }elseif(isset($role[0]) && ($role[0]=='user')){
 
-            return redirect('user');
+            return redirect('users');
         }
 
     }
@@ -77,7 +78,8 @@ class HomeController extends Controller
         $user = Auth::user();
         $role = $user->getRoleNames();
 
-        return view('adminlte::home',compact('role'));
+        $users = User::all();
+        return view('adminlte::home',compact('role','users'));
 
     }
 

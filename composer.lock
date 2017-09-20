@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "16e2677c294e996faa24c338f465e256",
+    "content-hash": "55bb189eeffddb08b2492ba3e158b8c0",
     "packages": [
         {
             "name": "acacha/admin-lte-template-laravel",
@@ -233,6 +233,54 @@
                 "user"
             ],
             "time": "2016-12-05T13:39:37+00:00"
+        },
+        {
+            "name": "brian2694/laravel-toastr",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/brian2694/laravel-toastr.git",
+                "reference": "52fdf2f9390d175348c6f4b3e8ceeb946f09ad9e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/brian2694/laravel-toastr/zipball/52fdf2f9390d175348c6f4b3e8ceeb946f09ad9e",
+                "reference": "52fdf2f9390d175348c6f4b3e8ceeb946f09ad9e",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/session": ">=5.2.7",
+                "illuminate/support": ">=5.2.7",
+                "php": ">=5.5.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Brian2694\\Toastr\\": "src/"
+                },
+                "files": [
+                    "src/helper.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "brian2694",
+                    "email": "briansanchez2694@gmail.com"
+                }
+            ],
+            "description": "toastr.js for laravel 5.4",
+            "homepage": "https://github.com/brian2694/laravel-toastr",
+            "keywords": [
+                "laravel",
+                "notification",
+                "php",
+                "toastr"
+            ],
+            "time": "2017-01-28T19:35:27+00:00"
         },
         {
             "name": "creativeorange/gravatar",

@@ -58,6 +58,12 @@ desired effect
 @section('scripts')
     @include('adminlte::layouts.partials.scripts')
 @show
+<!-- this page specific styles -->
+@yield('page_specific_styles')
+<!-- this page specific scripts -->
+@yield('page_specific_scripts')
+<!-- this page specific inline scripts -->
+@yield('page_specific_inline_scripts')
 
 </body>
 </html>

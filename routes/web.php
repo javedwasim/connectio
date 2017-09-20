@@ -36,10 +36,7 @@ Route::group(['middleware' => ['role:superadmin,edit website']], function () {
 });
 
 Route::group(['middleware' => ['role:user,edit not allowed']], function () {
-    Route::get('user', [
-        'as' => 'home',
-        'uses' => 'HomeController@UserView'
-    ]);
+    Route::resource('users','UserController');
 });
 
 

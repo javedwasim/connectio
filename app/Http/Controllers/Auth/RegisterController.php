@@ -65,59 +65,41 @@ class RegisterController extends Controller
     /**
      * Get a validator for an incoming registration request.
      *
-     * @param  array  $data
+     * @param  array $data
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name'     => 'required|max:255',
+            'name' => 'required|max:255',
             'username' => 'sometimes|required|max:255|unique:users',
-            'email'    => 'required|email|max:255|unique:users',
+            'email' => 'required|email|max:255|unique:users',
             'password' => 'required|min:6|confirmed',
-            'terms'    => 'required',
+            'terms' => 'required',
         ]);
     }
 
     /**
      * Create a new user instance after a valid registration.
      *
-     * @param  array  $data
+     * @param  array $data
      * @return User
      */
     protected function create(array $data)
     {
-        $agent = new Agent();
-        $deviceType  = '';
-
-       echo $browser = $agent->browser();
-       echo  $version = $agent->version($browser);
-
-       if($agent->isDesktop()){
-
-           $deviceType = 'Desktop';
-
-           echo $deviceType;
-       }
-
-        dd();
-
-        //save userlocation info
-        $this->SaveUserMeta(1,"182.185.148.11");
-        dd();
         $userData = Request::all();
         $confirmationCode = str_random(30);
 
         $fields = [
-            'name'     => $data['name'],
-            'email'    => $data['email'],
+            'name' => $data['name'],
+            'email' => $data['email'],
             'password' => bcrypt($data['password']),
         ];
-        if (config('auth.providers.users.field','email') === 'username' && isset($data['username'])) {
+        if (config('auth.providers.users.field', 'email') === 'username' && isset($data['username'])) {
             $fields['username'] = $data['username'];
         }
 
-       //return User::create($fields);
+        //return User::create($fields);
         //create user with role and permisssion
         $user = new User;
         $user->name = $userData['name'];
@@ -131,9 +113,8 @@ class RegisterController extends Controller
         //adding permissions to a user
         $user->givePermissionTo('edit not allowed');
         //user id $user->id
-
         //save userlocation info
-        $this->SaveUserMeta($user->id,"182.185.148.11");
+        $this->SaveUserMeta($user->id, "182.185.148.11");
         //send verification email.
         $this->SendActivationEmail($confirmationCode);
 
@@ -141,28 +122,54 @@ class RegisterController extends Controller
 
     }
 
-    public function SaveUserMeta($userId,$ipAddres){
+    public function SaveUserMeta($userId, $ipAddres)
+    {
 
         $userLoacationInfo = geoip()->getLocation($ipAddres);
-        $browserInfo = new Agent();
 
-        $userInfo = json_encode(array('ip' => $userLoacationInfo->ip,'iso_code'=>$userLoacationInfo->iso_code,
-                'country'=>$userLoacationInfo->country,'city'=>$userLoacationInfo->city,'state'=>$userLoacationInfo->state,
-                'state_name'=>$userLoacationInfo->state_name,'postal_code'=>$userLoacationInfo->postal_code,
-                'lat'=>$userLoacationInfo->lat,'lon'=>$userLoacationInfo->lon,'timezone'=>$userLoacationInfo->timezone,
-                'currency'=>$userLoacationInfo->currency));
+        $agent = new Agent();
+        $deviceType = '';
+
+        $browser = $agent->browser(); //Get the browser name. (Chrome, IE, Safari, Firefox, ...)
+        $version = $agent->version($browser);
+
+        $platform = $agent->platform();
+        $platformVersion = $agent->version($platform);
+
+        if ($agent->isDesktop()) {
+
+            $deviceType = 'Desktop';
+
+        } else {
+
+            $deviceType = $agent->device(); //Get the device name, if mobile. (iPhone, Nexus, AsusTablet, ...)
+        }
+
+        $platform = $agent->platform(); //Get the operating system. (Ubuntu, Windows, OS X, ...)
+
+        $browserInfo = json_encode(array('browser' => $browser, 'version' => $version,
+            'platform' => $platform, 'platformversion' => $platformVersion, 'platform' => $platform,
+            'devicetype' => $deviceType));
+
+
+        $userInfo = json_encode(array('ip' => $userLoacationInfo->ip, 'iso_code' => $userLoacationInfo->iso_code,
+            'country' => $userLoacationInfo->country, 'city' => $userLoacationInfo->city, 'state' => $userLoacationInfo->state,
+            'state_name' => $userLoacationInfo->state_name, 'postal_code' => $userLoacationInfo->postal_code,
+            'lat' => $userLoacationInfo->lat, 'lon' => $userLoacationInfo->lon, 'timezone' => $userLoacationInfo->timezone,
+            'currency' => $userLoacationInfo->currency));
 
         $userMeta = new usermeta();
         $userMeta->user_id = $userId;
         $userMeta->locations = $userInfo;
-        $userMeta->browserinfo = '';
+        $userMeta->browserinfo = $browserInfo;
         $userMeta->save();
         return $userMeta;
 
 
     }
 
-    public function SendActivationEmail($confirmationCode){
+    public function SendActivationEmail($confirmationCode)
+    {
 
         $data = [
 
@@ -182,16 +189,14 @@ class RegisterController extends Controller
 
     public function confirm($confirmation_code)
     {
-        if( ! $confirmation_code)
-        {
+        if (!$confirmation_code) {
             Flash::message('You have successfully verified your account.');
 
         }
 
         $user = User::whereConfirmationCode($confirmation_code)->first();
 
-        if ( ! $user)
-        {
+        if (!$user) {
             return redirect('registers')->with('status', 'Invalid email address! Please signup.');
 
         }
